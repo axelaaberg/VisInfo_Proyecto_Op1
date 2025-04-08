@@ -2,12 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Page header</title>
-    <!-- <link rel="stylesheet" href="style.css"> -->
+    <title>Visualización de Rutas Aéreas</title>
     <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
   </head>
 
-  <!-- 
+  <body>
+    <h1>Visualización de rutas en Sudamérica</h1>
+    <div style="display: flex; gap: 10px">
+      <div id="mapSA" style="width: 100%; height: 90vh"></div>
+    </div>
+
+<!-- 
+
 ideas para mejorar la visulización:
 
 - pon una flecha y un text descriptiva a los aeropuertos/rutas más importantes/interesantes (ej. más rutas o menos pasajeros etc etc)
@@ -21,61 +27,28 @@ ideas para mejorar la visulización:
 
 -->
 
-  <body>
-    <h1>Titulo</h1>
-    <h1>Visualización de rutas</h1>
-    <div style="display: flex; gap: 10px">
-      <div id="mapSA" style="width: 50%; height: 90vh"></div>
-      <div id="sankey" style="width: 50%; height: 90vh"></div>
-    </div>
-
     <script>
-      fetch("airline_routes.json")
+      fetch("SA_airline_routes.json")
         .then((res) => res.json())
         .then((data) => {
           let lines = [];
-          let uniqueAirports = new Map(); // usaremos esto para guardar solo un marcador por aeropuerto
+          let uniqueAirports = new Map();
 
-          // El arreglo no está en uso por el momento
-          const latinAmericanCountries = [
-            "Mexico",
-            "Guatemala",
-            "Honduras",
-            "El Salvador",
-            "Nicaragua",
-            "Costa Rica",
-            "Panama",
-            "Colombia",
-            "Venezuela",
-            "Ecuador",
-            "Peru",
-            "Bolivia",
-            "Paraguay",
-            "Chile",
-            "Argentina",
-            "Uruguay",
-            "Brazil",
-            "Cuba",
-            "Dominican Republic",
-            "Haiti",
-          ];
+          const southAmerica = data.filter((info) => info.continent === "SA");
 
-          const southAmerica = Object.entries(data).filter(
-            ([iata, info]) => info.continent === "SA"
-          );
-
+          // Creamos un mapa de IATA → info
           const iataMap = Object.fromEntries(
-            southAmerica.map(([iata, info]) => [iata, info])
+            southAmerica.map((info) => [info.iata, info])
           );
 
-          for (const [iataOrigen, origen] of southAmerica) {
+          // Recorremos cada aeropuerto de origen
+          for (const origen of southAmerica) {
             if (!origen.routes) continue;
 
-            // Guardamos el aeropuerto origen como marcador
-            uniqueAirports.set(iataOrigen, origen);
+            uniqueAirports.set(origen.iata, origen);
 
-            for (const ruta of origen.routes) {
-              const destino = iataMap[ruta.iata];
+            for (const destinoIATA of origen.routes) {
+              const destino = iataMap[destinoIATA];
               if (!destino) continue;
 
               lines.push({
@@ -89,19 +62,15 @@ ideas para mejorar la visulización:
                   parseFloat(origen.latitude),
                   parseFloat(destino.latitude),
                 ],
-                line: {
-                  width: 0.4,
-                  color: "red",
-                },
+                line: { width: 0.4, color: "red" },
                 opacity: 0.9,
               });
 
-              // Guardamos también el aeropuerto destino como marcador
-              uniqueAirports.set(ruta.iata, destino);
+              uniqueAirports.set(destinoIATA, destino);
             }
           }
 
-          // Creamos los markers a partir de los aeropuertos únicos
+          // Creamos los markers
           const markers = [
             {
               type: "scattergeo",
@@ -113,19 +82,19 @@ ideas para mejorar la visulización:
                 parseFloat(a.latitude)
               ),
               marker: {
-                size: 6,
+                size: 5,
                 color: "red",
                 opacity: 0.7,
               },
               text: Array.from(uniqueAirports.values()).map(
-                (a) => a.display_name
+                (a) => a.city_name + " (" + a.iata + ")"
               ),
               name: "Aeropuertos",
             },
           ];
 
           const layout = {
-            title: "Rutas Aéreas en Latinoamérica",
+            title: "Rutas Aéreas en Sudamérica",
             geo: {
               scope: "south america",
               projection: { type: "equirectangular" },
@@ -135,8 +104,6 @@ ideas para mejorar la visulización:
               oceancolor: "rgb(210, 235, 255)",
               showcountries: true,
               countrycolor: "rgb(100, 100, 100)",
-              //lataxis: { range: [-60, 35] },
-              //lonaxis: { range: [-120, -30] }
             },
             margin: { t: 30, b: 0, l: 0, r: 0 },
           };
