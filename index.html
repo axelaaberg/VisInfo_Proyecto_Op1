@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Page header</title>
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+  </head>
+
+  <!-- 
+ideas para mejorar la visulización:
+
+- pon una flecha y un text descriptiva a los aeropuertos/rutas más importantes/interesantes (ej. más rutas o menos pasajeros etc etc)
+
+- al hacer click/hover encima de un aeropuerto las línean que salen de ahí se engrosa mientras lo demás se vuelven gris y un poco información adicional sale 
+
+- una lista al lado del mapa con todos los aeropuertos donde se puede ambos buscar y elegir aeropuerto. al elegir una el mismo efecto mencionado encima ocurre
+ 
+- un sankey diagrama mostrando 
+
+
+-->
+
+  <body>
+    <h1>Titulo</h1>
+    <h1>Visualización de rutas</h1>
+    <div style="display: flex; gap: 10px">
+      <div id="mapSA" style="width: 50%; height: 90vh"></div>
+      <div id="sankey" style="width: 50%; height: 90vh"></div>
+    </div>
+
+    <script>
+      fetch("airline_routes.json")
+        .then((res) => res.json())
+        .then((data) => {
+          let lines = [];
+          let uniqueAirports = new Map(); // usaremos esto para guardar solo un marcador por aeropuerto
+
+          // El arreglo no está en uso por el momento
+          const latinAmericanCountries = [
+            "Mexico",
+            "Guatemala",
+            "Honduras",
+            "El Salvador",
+            "Nicaragua",
+            "Costa Rica",
+            "Panama",
+            "Colombia",
+            "Venezuela",
+            "Ecuador",
+            "Peru",
+            "Bolivia",
+            "Paraguay",
+            "Chile",
+            "Argentina",
+            "Uruguay",
+            "Brazil",
+            "Cuba",
+            "Dominican Republic",
+            "Haiti",
+          ];
+
+          const southAmerica = Object.entries(data).filter(
+            ([iata, info]) => info.continent === "SA"
+          );
+
+          const iataMap = Object.fromEntries(
+            southAmerica.map(([iata, info]) => [iata, info])
+          );
+
+          for (const [iataOrigen, origen] of southAmerica) {
+            if (!origen.routes) continue;
+
+            // Guardamos el aeropuerto origen como marcador
+            uniqueAirports.set(iataOrigen, origen);
+
+            for (const ruta of origen.routes) {
+              const destino = iataMap[ruta.iata];
+              if (!destino) continue;
+
+              lines.push({
+                type: "scattergeo",
+                mode: "lines",
+                lon: [
+                  parseFloat(origen.longitude),
+                  parseFloat(destino.longitude),
+                ],
+                lat: [
+                  parseFloat(origen.latitude),
+                  parseFloat(destino.latitude),
+                ],
+                line: {
+                  width: 0.4,
+                  color: "red",
+                },
+                opacity: 0.9,
+              });
+
+              // Guardamos también el aeropuerto destino como marcador
+              uniqueAirports.set(ruta.iata, destino);
+            }
+          }
+
+          // Creamos los markers a partir de los aeropuertos únicos
+          const markers = [
+            {
+              type: "scattergeo",
+              mode: "markers",
+              lon: Array.from(uniqueAirports.values()).map((a) =>
+                parseFloat(a.longitude)
+              ),
+              lat: Array.from(uniqueAirports.values()).map((a) =>
+                parseFloat(a.latitude)
+              ),
+              marker: {
+                size: 6,
+                color: "red",
+                opacity: 0.7,
+              },
+              text: Array.from(uniqueAirports.values()).map(
+                (a) => a.display_name
+              ),
+              name: "Aeropuertos",
+            },
+          ];
+
+          const layout = {
+            title: "Rutas Aéreas en Latinoamérica",
+            geo: {
+              scope: "south america",
+              projection: { type: "equirectangular" },
+              showland: true,
+              landcolor: "rgb(193, 230, 193)",
+              showocean: true,
+              oceancolor: "rgb(210, 235, 255)",
+              showcountries: true,
+              countrycolor: "rgb(100, 100, 100)",
+              //lataxis: { range: [-60, 35] },
+              //lonaxis: { range: [-120, -30] }
+            },
+            margin: { t: 30, b: 0, l: 0, r: 0 },
+          };
+
+          Plotly.newPlot("mapSA", lines.concat(markers), layout);
+        });
+    </script>
+  </body>
+</html>
