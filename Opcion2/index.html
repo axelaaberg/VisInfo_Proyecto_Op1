@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapa de Velocidad de Internet</title>
+  <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
+  <style>
+    body { margin: 0; }
+    #mapa { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+
+<div id="mapa"></div>
+
+<script>
+  fetch('velocidad_sudamerica.json')
+    .then(response => response.json())
+    .then(data => {
+      const latitudes = data.map(d => d.tile_y);
+      const longitudes = data.map(d => d.tile_x);
+      const velocidades = data.map(d => d.avg_d_kbps);
+
+      const trace = {
+        type: 'densitymapbox',
+        lat: latitudes,
+        lon: longitudes,
+        z: velocidades,
+        radius: 10,
+        colorscale: 'Viridis',
+        colorbar: {
+          title: 'Velocidad (kbps)'
+        }
+      };
+
+      const layout = {
+        mapbox: {
+          style: 'carto-positron',
+          center: { lat: -25, lon: -65 }, 
+          zoom: 4
+        },
+        margin: { t: 0, b: 0, l: 0, r: 0 },
+        title: 'Velocidad Promedio de Internet'
+      };
+
+      Plotly.newPlot('mapa', [trace], layout, { responsive: true });
+    })
+    .catch(error => console.error("Error al cargar el JSON:", error));
+</script>
+
+</body>
+</html>
