@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mapa de Velocidad de Internet</title>
+    <script src="https://cdn.plot.ly/plotly-2.34.0.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+      }
+      #graph {
+        width: 60%;
+        height: 80vh;
+        margin-left: 5%;
+        margin-top: 5%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="graph"></div>
+
+
+    <!-- 
+    ideas para mejorar:
+    - agregar una línea de regresión lineal
+    - agregar círculos que lo hacen más claro las tendencias de cada zona 
+    - mover el legend a donde los círculos  
+    
+    - agregar un mapa de calor de santiago que muestra la relación entre el ingreso promedio y el tiempo de viaje (alpha = ingreso/tiempo)
+    -->
+
+    <script>
+      fetch("data.json")
+        .then((response) => response.json())
+        .then((data) => {
+          const comuna = data.map((d) => d.comuna);
+          const zona = data.map((d) => d.zona);
+          const tiempo_viaje = data.map((d) => d.tiempo_viaje_min);
+          const ingreso_promedio = data.map((d) => d.ingreso_promedio);
+          const peso_transporte_pct = data.map((d) => d.peso_transporte_pct);
+
+          var norte = {
+            x: tiempo_viaje.filter((_, i) => zona[i] === "Norte"),
+            y: ingreso_promedio.filter((_, i) => zona[i] === "Norte"),
+            name: "Norte",
+            marker: {
+              color: "green",
+              size: 20,
+            },
+            type: "scatter",
+            mode: "markers",
+          };
+
+          var centro = {
+            x: tiempo_viaje.filter((_, i) => zona[i] === "Centro"),
+            y: ingreso_promedio.filter((_, i) => zona[i] === "Centro"),
+            name: "Centro",
+            marker: {
+              color: "red",
+              size: 20,
+            },
+            type: "scatter",
+            mode: "markers",
+          };
+
+          var sur = {
+            x: tiempo_viaje.filter((_, i) => zona[i] === "Sur"),
+            y: ingreso_promedio.filter((_, i) => zona[i] === "Sur"),
+            name: "Sur",
+            marker: {
+              color: "blue",
+              size: 20,
+            },
+            type: "scatter",
+            mode: "markers",
+          };
+
+          var nororiente = {
+            x: tiempo_viaje.filter((_, i) => zona[i] === "Nororiente"),
+            y: ingreso_promedio.filter((_, i) => zona[i] === "Nororiente"),
+            name: "Nororiente",
+            marker: {
+              color: "purple",
+              size: 20,
+            },
+            type: "scatter",
+            mode: "markers",
+          };
+
+          var fuera = {
+            x: tiempo_viaje.filter(
+              (_, i) => zona[i] === "Comunas fuera del área urbana consolidada"
+            ),
+            y: ingreso_promedio.filter(
+              (_, i) => zona[i] === "Comunas fuera del área urbana consolidada"
+            ),
+            name: "Comunas fuera del área urbana consolidada",
+            marker: {
+              color: "orange",
+              size: 20,
+            },
+            type: "scatter",
+            mode: "markers",
+          };
+
+          var suroriente = {
+            x: tiempo_viaje.filter((_, i) => zona[i] === "Suroriente"),
+            y: ingreso_promedio.filter((_, i) => zona[i] === "Suroriente"),
+            name: "Suroriente",
+            marker: {
+              color: "pink",
+              size: 20,
+            },
+            type: "scatter",
+            mode: "markers",
+          };
+
+          var data = [norte, centro, sur, nororiente, fuera, suroriente];
+
+          var layout = {
+            scattermode: "group",
+            title: {
+              text: "Agrupado por zona",
+              font: {
+                size: 35,
+              },
+            },
+            xaxis: {
+              title: {
+                text: "Tiempo de Viaje (minutos)",
+                font: {
+                  size: 25,
+                },
+              },
+              tickfont: {
+                size: 20,
+              },
+              showline: true,
+              linewidth: 2,
+              linecolor: "black",
+            },
+            yaxis: {
+              title: {
+                text: "Ingreso promedio del hogar (CLP mensual????)",
+                font: {
+                  size: 25,
+                },
+              },
+              tickfont: {
+                size: 20,
+              },
+              showline: true,
+              linewidth: 2,
+              linecolor: "black",
+            },
+          };
+
+          Plotly.newPlot("graph", data, layout);
+        })
+        .catch((error) => console.error("Error al cargar el JSON:", error));
+    </script>
+  </body>
+</html>
